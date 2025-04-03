@@ -12,11 +12,4 @@ pub fn setup_cli() -> Command {
                 .index(1)
                 .value_parser(value_parser!(PathBuf)),
         )
-        .arg(
-            Arg::new("debug")
-                .short('d')
-                .long("debug")
-                .help("Turn debugging information on")
-                .action(clap::ArgAction::SetTrue),
-        )
 }
