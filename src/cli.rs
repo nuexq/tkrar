@@ -1,4 +1,5 @@
-use clap::{Arg, Command};
+use clap::{Arg, Command, value_parser};
+use std::path::PathBuf;
 
 pub fn setup_cli() -> Command {
     Command::new("Tkrar")
@@ -8,7 +9,8 @@ pub fn setup_cli() -> Command {
             Arg::new("target")
                 .help("Path to the target file")
                 .required(true)
-                .index(1),
+                .index(1)
+                .value_parser(value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("debug")
@@ -18,4 +20,3 @@ pub fn setup_cli() -> Command {
                 .action(clap::ArgAction::SetTrue),
         )
 }
-
