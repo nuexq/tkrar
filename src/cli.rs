@@ -2,7 +2,7 @@ use clap::{Arg, Command, value_parser};
 use std::path::PathBuf;
 
 pub fn setup_cli() -> Command {
-    Command::new("Tkrar")
+    Command::new("tkrar")
         .author("nuexq")
         .about("Count frequency of words in a file")
         .arg(
@@ -11,5 +11,12 @@ pub fn setup_cli() -> Command {
                 .required(true)
                 .index(1)
                 .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            Arg::new("top")
+                .help("Show the N most frequent words")
+                .short('t')
+                .long("top")
+                .value_parser(value_parser!(usize)),
         )
 }
