@@ -9,9 +9,5 @@ fn main() {
     if let Some(target) = matches.get_one::<PathBuf>("target") {
         commands::count_words(target);
     }
-
-    if matches.get_flag("debug") {
-        println!("Debug mode is ON.");
-    }
 }
 
