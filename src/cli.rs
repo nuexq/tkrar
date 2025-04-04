@@ -25,6 +25,7 @@ pub fn setup_cli() -> Command {
                 .help("Sort order")
                 .short('s')
                 .long("sort")
+                .value_name("ORDER")
                 .default_value("desc")
                 .value_parser(["asc", "desc"]),
         )
@@ -33,6 +34,12 @@ pub fn setup_cli() -> Command {
                 .help("Ignore case when counting words")
                 .short('i')
                 .long("ignore_case")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("no_stopwords")
+                .help("Ignore stopwords when counting words")
+                .long("no-stopwords")
                 .action(ArgAction::SetTrue),
         )
 }

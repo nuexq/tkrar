@@ -23,8 +23,9 @@ fn real_main() -> Result<(), CliError> {
     let top = matches.get_one::<usize>("top").copied();
     let sort = matches.get_one::<String>("sort");
     let ignore_case = matches.get_flag("ignore_case");
+    let no_stopwords = matches.get_flag("no_stopwords");
 
-    commands::count_words(target, sort, top, ignore_case)?;
+    commands::count_words(target, sort, top, ignore_case, no_stopwords)?;
 
     Ok(())
 }

@@ -1,11 +1,12 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
 
 use color_print::cprintln;
+use stopwords::{Language, Spark, Stopwords};
 
 use crate::error::CliError;
 
@@ -14,16 +15,26 @@ pub fn count_words(
     sort: Option<&String>,
     top: Option<usize>,
     ignore_case: bool,
+    no_stopwords: bool,
 ) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
 
     let mut word_count = HashMap::new();
 
+    let stops: HashSet<String> = Spark::stopwords(Language::English)
+        .unwrap()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+
     for line in reader.lines() {
         let line = line?;
 
         for word in line.split_whitespace() {
+            if no_stopwords && stops.contains(&word.to_lowercase()) {
+                continue;
+            }
             let cleaned = clean_word(word, ignore_case);
 
             if !cleaned.is_empty() {
