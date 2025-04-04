@@ -17,6 +17,7 @@ pub fn setup_cli() -> Command {
                 .help("Show the N most frequent words")
                 .short('t')
                 .long("top")
+                .value_name("N")
                 .value_parser(value_parser!(usize)),
         )
         .arg(
