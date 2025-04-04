@@ -20,7 +20,12 @@ fn clean_word(word: &str, ignore_case: bool) -> String {
     }
 }
 
-pub fn count_words(target: &Path, top: Option<usize>, ignore_case: bool) -> Result<(), CliError> {
+pub fn count_words(
+    target: &Path,
+    sort: Option<&String>,
+    top: Option<usize>,
+    ignore_case: bool,
+) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
 
@@ -43,7 +48,13 @@ pub fn count_words(target: &Path, top: Option<usize>, ignore_case: bool) -> Resu
 
     // Sort the words by frequency
     let mut sorted: Vec<(String, usize)> = word_count.into_iter().collect();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    if let Some(sort) = sort {
+        if sort == "asc" {
+            sorted.sort_by(|a, b| a.1.cmp(&b.1));
+        } else {
+            sorted.sort_by(|a, b| b.1.cmp(&a.1));
+        }
+    }
 
     // Print the top N words
     let count = top.unwrap_or(sorted.len());

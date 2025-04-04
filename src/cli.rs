@@ -21,6 +21,14 @@ pub fn setup_cli() -> Command {
                 .value_parser(value_parser!(usize)),
         )
         .arg(
+            Arg::new("sort")
+                .help("Sort order")
+                .short('s')
+                .long("sort")
+                .default_value("desc")
+                .value_parser(["asc", "desc"]),
+        )
+        .arg(
             Arg::new("ignore_case")
                 .help("Ignore case when counting words")
                 .short('i')
