@@ -2,8 +2,18 @@ use std::path::PathBuf;
 
 mod cli;
 mod commands;
+mod error;
+
+use error::CliError;
 
 fn main() {
+    if let Err(e) = real_main() {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
+}
+
+fn real_main() -> Result<(), CliError> {
     let matches = cli::setup_cli().get_matches();
 
     let target = matches
@@ -12,9 +22,7 @@ fn main() {
 
     let top = matches.get_one::<usize>("top").copied();
 
-    if let Err(e) = commands::count_words(target, top) {
-        eprintln!("Error: {}", e);
-        std::process::exit(1);
-    }
-}
+    commands::count_words(target, top)?;
 
+    Ok(())
+}

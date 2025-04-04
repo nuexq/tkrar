@@ -1,29 +1,32 @@
 use std::{
     collections::HashMap,
     fs::File,
-    io::{self, BufRead, BufReader},
+    io::{BufRead, BufReader},
     path::Path,
 };
 
-pub fn count_words(target: &Path, top: Option<usize>) -> io::Result<()> {
+use crate::error::CliError;
+
+pub fn count_words(target: &Path, top: Option<usize>) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
 
     let mut word_count = HashMap::new();
 
     for line in reader.lines() {
-        for word in line?.split_whitespace() {
-            let cleaned_word = word.trim_matches(|c: char| !c.is_alphanumeric());
-            if !cleaned_word.is_empty() {
+        let line = line?;
+        for word in line.split_whitespace() {
+            let cleaned = word.trim_matches(|c: char| !c.is_alphanumeric());
+            if !cleaned.is_empty() {
                 word_count
-                    .entry(cleaned_word.to_string())
+                    .entry(cleaned.to_string())
                     .and_modify(|c| *c += 1)
                     .or_insert(1);
             }
         }
     }
 
-    let mut sorted: Vec<_> = word_count.into_iter().collect();
+    let mut sorted: Vec<(String, usize)> = word_count.into_iter().collect();
     sorted.sort_by(|a, b| b.1.cmp(&a.1));
 
     let count = top.unwrap_or(sorted.len());
