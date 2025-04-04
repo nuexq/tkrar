@@ -59,14 +59,21 @@ pub fn count_words(
     // Print the top N words
     let count = top.unwrap_or(sorted.len());
 
+    let max_word_len = sorted
+        .iter()
+        .take(count)
+        .map(|(word, _freq)| word.len())
+        .max()
+        .unwrap_or(0);
+
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
         cprintln!(
-            "<bold,blue>{:>2}.</> <green>{:<15}</> <bold,magenta>{}</>",
+            "<bold,blue>{:>2}.</> <green>{:<width$}</> <bold,magenta>{}</>",
             i + 1,
             word,
-            freq
+            freq,
+            width = max_word_len + 2
         );
     }
-
     Ok(())
 }
