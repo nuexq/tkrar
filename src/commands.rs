@@ -5,6 +5,8 @@ use std::{
     path::Path,
 };
 
+use color_print::cprintln;
+
 use crate::error::CliError;
 
 fn clean_word(word: &str, case_sensitive: bool) -> String {
@@ -51,8 +53,14 @@ pub fn count_words(
     let count = top.unwrap_or(sorted.len());
 
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
-        println!("{:2}. {:<15} {}", i + 1, word, freq);
+        cprintln!(
+            "<bold>{:>2}.</bold> <bold,green>{:<15}</>  <bold,yellow>{}</>",
+            i + 1,
+            word,
+            freq
+        );
     }
 
     Ok(())
 }
+
