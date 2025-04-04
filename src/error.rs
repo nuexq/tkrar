@@ -1,5 +1,7 @@
 use std::fmt;
 
+use color_print::cwrite;
+
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum CliError {
@@ -10,8 +12,8 @@ pub enum CliError {
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CliError::Io(err) => write!(f, "IO error: {}", err),
-            CliError::Other(msg) => write!(f, "Error: {}", msg),
+            CliError::Io(err) => cwrite!(f, "<bold,red>IO error</>: {}", err),
+            CliError::Other(msg) => cwrite!(f, "<bold,red>Error</>: {}", msg),
         }
     }
 }
