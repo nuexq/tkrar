@@ -32,10 +32,11 @@ pub fn count_words(
         let line = line?;
 
         for word in line.split_whitespace() {
-            if no_stopwords && stops.contains(&word.to_lowercase()) {
+            let cleaned = clean_word(word, ignore_case);
+
+            if no_stopwords && stops.contains(&cleaned.to_lowercase()) {
                 continue;
             }
-            let cleaned = clean_word(word, ignore_case);
 
             if !cleaned.is_empty() {
                 word_count
