@@ -54,7 +54,7 @@ pub fn count_words(
 
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
         cprintln!(
-            "<bold>{:>2}.</bold> <bold,green>{:<15}</>  <bold,yellow>{}</>",
+            "<bold,blue>{:>2}.</> <green>{:<15}</> <bold,magenta>{}</>",
             i + 1,
             word,
             freq

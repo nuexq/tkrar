@@ -24,6 +24,6 @@ pub fn setup_cli() -> Command {
                 .help("Count words case-sensitively")
                 .short('c')
                 .long("case-sensitive")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::SetTrue),
         )
 }
