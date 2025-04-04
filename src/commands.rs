@@ -9,22 +9,18 @@ use color_print::cprintln;
 
 use crate::error::CliError;
 
-fn clean_word(word: &str, case_sensitive: bool) -> String {
+fn clean_word(word: &str, ignore_case: bool) -> String {
     let cleaned = word.trim_matches(|c: char| !c.is_alphanumeric());
 
     // handle case-insensitive
-    if case_sensitive {
-        cleaned.to_string()
-    } else {
+    if ignore_case {
         cleaned.to_lowercase()
+    } else {
+        cleaned.to_string()
     }
 }
 
-pub fn count_words(
-    target: &Path,
-    top: Option<usize>,
-    case_sensitive: bool,
-) -> Result<(), CliError> {
+pub fn count_words(target: &Path, top: Option<usize>, ignore_case: bool) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
 
@@ -34,7 +30,7 @@ pub fn count_words(
         let line = line?;
 
         for word in line.split_whitespace() {
-            let cleaned = clean_word(word, case_sensitive);
+            let cleaned = clean_word(word, ignore_case);
 
             if !cleaned.is_empty() {
                 word_count
@@ -63,4 +59,3 @@ pub fn count_words(
 
     Ok(())
 }
-
