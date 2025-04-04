@@ -9,17 +9,6 @@ use color_print::cprintln;
 
 use crate::error::CliError;
 
-fn clean_word(word: &str, ignore_case: bool) -> String {
-    let cleaned = word.trim_matches(|c: char| !c.is_alphanumeric());
-
-    // handle case-insensitive
-    if ignore_case {
-        cleaned.to_lowercase()
-    } else {
-        cleaned.to_string()
-    }
-}
-
 pub fn count_words(
     target: &Path,
     sort: Option<&String>,
@@ -59,21 +48,25 @@ pub fn count_words(
     // Print the top N words
     let count = top.unwrap_or(sorted.len());
 
-    let max_word_len = sorted
-        .iter()
-        .take(count)
-        .map(|(word, _freq)| word.len())
-        .max()
-        .unwrap_or(0);
-
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
         cprintln!(
-            "<bold,blue>{:>2}.</> <green>{:<width$}</> <bold,magenta>{}</>",
+            "<k!>{:>2}.</> <w!>{:<15}</> <bold,y>{}</>",
             i + 1,
             word,
             freq,
-            width = max_word_len + 2
         );
     }
     Ok(())
+}
+
+// clean word from unnecessary characters and implement case-insensitive
+fn clean_word(word: &str, ignore_case: bool) -> String {
+    let cleaned = word.trim_matches(|c: char| !c.is_alphanumeric());
+
+    // handle case-insensitive
+    if ignore_case {
+        cleaned.to_lowercase()
+    } else {
+        cleaned.to_string()
+    }
 }
