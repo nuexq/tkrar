@@ -21,8 +21,9 @@ fn real_main() -> Result<(), CliError> {
         .expect("Target file is required");
 
     let top = matches.get_one::<usize>("top").copied();
+    let case_sensitive = matches.get_flag("case-sensitive");
 
-    commands::count_words(target, top)?;
+    commands::count_words(target, top, case_sensitive)?;
 
     Ok(())
 }

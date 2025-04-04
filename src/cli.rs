@@ -1,4 +1,4 @@
-use clap::{Arg, Command, value_parser};
+use clap::{Arg, ArgAction, Command, value_parser};
 use std::path::PathBuf;
 
 pub fn setup_cli() -> Command {
@@ -18,5 +18,12 @@ pub fn setup_cli() -> Command {
                 .short('t')
                 .long("top")
                 .value_parser(value_parser!(usize)),
+        )
+        .arg(
+            Arg::new("case-sensitive")
+                .help("Count words case-sensitively")
+                .short('c')
+                .long("case-sensitive")
+                .action(ArgAction::SetTrue)
         )
 }
