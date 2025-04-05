@@ -30,10 +30,10 @@ pub fn setup_cli() -> Command {
                 .value_parser(["asc", "desc"]),
         )
         .arg(
-            Arg::new("ignore_case")
-                .help("Ignore case when counting words")
-                .short('i')
-                .long("ignore_case")
+            Arg::new("case_sensitive")
+                .help("Enable case sensitivity when counting words")
+                .short('c')
+                .long("case-sensitive")
                 .action(ArgAction::SetTrue),
         )
         .arg(

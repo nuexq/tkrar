@@ -22,10 +22,10 @@ fn real_main() -> Result<(), CliError> {
 
     let top = matches.get_one::<usize>("top").copied();
     let sort = matches.get_one::<String>("sort");
-    let ignore_case = matches.get_flag("ignore_case");
+    let case_sensitive = matches.get_flag("case_sensitive");
     let no_stopwords = matches.get_flag("no_stopwords");
 
-    commands::count_words(target, sort, top, ignore_case, no_stopwords)?;
+    commands::count_words(target, sort, top, case_sensitive, no_stopwords)?;
 
     Ok(())
 }

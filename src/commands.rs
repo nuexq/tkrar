@@ -16,7 +16,7 @@ pub fn count_words(
     target: &Path,
     sort: Option<&String>,
     top: Option<usize>,
-    ignore_case: bool,
+    case_sensitive: bool,
     no_stopwords: bool,
 ) -> Result<(), CliError> {
     let file = File::open(target)?;
@@ -34,7 +34,7 @@ pub fn count_words(
         let line = line?;
 
         for word in line.unicode_words() {
-            let cleaned = handle_ignore_case(word, ignore_case);
+            let cleaned = handle_case_sensitive(word, case_sensitive);
 
             if no_stopwords && stops.contains(&cleaned.to_lowercase()) {
                 continue;
@@ -68,12 +68,11 @@ pub fn count_words(
     Ok(())
 }
 
-// handle ignore case
-fn handle_ignore_case(word: &str, ignore_case: bool) -> String {
-    if ignore_case {
-        word.to_lowercase()
-    } else {
+// handle case sensitivity
+fn handle_case_sensitive(word: &str, case_sensitive: bool) -> String {
+    if case_sensitive {
         word.to_string()
+    } else {
+        word.to_lowercase()
     }
 }
-
