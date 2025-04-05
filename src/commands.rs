@@ -7,6 +7,7 @@ use std::{
 
 use color_print::cprintln;
 use stopwords::{Language, Spark, Stopwords};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::error::CliError;
 
@@ -31,19 +32,14 @@ pub fn count_words(
     for line in reader.lines() {
         let line = line?;
 
-        for word in line.split_whitespace() {
-            let cleaned = clean_word(word, ignore_case);
+        for word in line.unicode_words() {
+            let cleaned = handle_ignore_case(word, ignore_case);
 
             if no_stopwords && stops.contains(&cleaned.to_lowercase()) {
                 continue;
             }
 
-            if !cleaned.is_empty() {
-                word_count
-                    .entry(cleaned)
-                    .and_modify(|c| *c += 1)
-                    .or_insert(1);
-            }
+            *word_count.entry(cleaned).or_insert(0) += 1;
         }
     }
 
@@ -71,14 +67,11 @@ pub fn count_words(
     Ok(())
 }
 
-// clean word from unnecessary characters and implement case-insensitive
-fn clean_word(word: &str, ignore_case: bool) -> String {
-    let cleaned = word.trim_matches(|c: char| !c.is_alphanumeric());
-
-    // handle case-insensitive
+// handle ignore case
+fn handle_ignore_case(word: &str, ignore_case: bool) -> String {
     if ignore_case {
-        cleaned.to_lowercase()
+        word.to_lowercase()
     } else {
-        cleaned.to_string()
+        word.to_string()
     }
 }
