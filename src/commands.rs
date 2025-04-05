@@ -21,7 +21,16 @@ pub fn count_words(
 ) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
+    count_words_from_reader(reader, sort, top, case_sensitive, no_stopwords)
+}
 
+pub fn count_words_from_reader<R: BufRead>(
+    reader: R,
+    sort: Option<&String>,
+    top: Option<usize>,
+    case_sensitive: bool,
+    no_stopwords: bool,
+) -> Result<(), CliError> {
     let mut word_count = IndexMap::new();
 
     let stops: HashSet<String> = Spark::stopwords(Language::English)
