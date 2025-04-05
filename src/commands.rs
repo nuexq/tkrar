@@ -1,5 +1,6 @@
+use indexmap::IndexMap;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
@@ -21,7 +22,7 @@ pub fn count_words(
     let file = File::open(target)?;
     let reader = BufReader::new(file);
 
-    let mut word_count = HashMap::new();
+    let mut word_count = IndexMap::new();
 
     let stops: HashSet<String> = Spark::stopwords(Language::English)
         .unwrap()
@@ -44,7 +45,7 @@ pub fn count_words(
     }
 
     // Sort the words by frequency
-    let mut sorted: Vec<(String, usize)> = word_count.into_iter().collect();
+    let mut sorted: Box<[_]> = word_count.into_iter().collect();
     if let Some(sort) = sort {
         if sort == "asc" {
             sorted.sort_by(|a, b| a.1.cmp(&b.1));
@@ -75,3 +76,4 @@ fn handle_ignore_case(word: &str, ignore_case: bool) -> String {
         word.to_string()
     }
 }
+
