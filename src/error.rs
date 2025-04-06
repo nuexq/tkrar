@@ -29,4 +29,3 @@ impl From<std::io::Error> for CliError {
         CliError::Io(err)
     }
 }
-

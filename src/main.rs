@@ -34,4 +34,3 @@ fn real_main() -> Result<(), CliError> {
 
     Ok(())
 }
-
