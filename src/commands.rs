@@ -1,8 +1,10 @@
+use once_cell::sync::Lazy;
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
     io::{BufRead, BufReader, StdinLock},
     path::PathBuf,
+    sync::Arc,
 };
 
 use color_print::cprintln;
@@ -10,6 +12,16 @@ use stopwords::{Language, Spark, Stopwords};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{cli::CliArgs, error::CliError};
+
+static STOPWORDS: Lazy<Arc<HashSet<String>>> = Lazy::new(|| {
+    Arc::new(
+        Spark::stopwords(Language::English)
+            .unwrap()
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+    )
+});
 
 // count_words fn for single or multiple files
 pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
@@ -107,11 +119,7 @@ fn preprocess_word(
 }
 
 fn load_stopwords() -> Result<HashSet<String>, CliError> {
-    Ok(Spark::stopwords(Language::English)
-        .ok_or_else(|| CliError::Other("Failed to load stopwords".into()))?
-        .into_iter()
-        .map(|s| s.to_string())
-        .collect())
+    Ok(STOPWORDS.as_ref().clone()) // Clone the HashSet only when needed
 }
 
 fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(String, i32)> {

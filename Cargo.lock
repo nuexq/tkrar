@@ -259,6 +259,7 @@ dependencies = [
  "clap",
  "color-print",
  "indexmap",
+ "once_cell",
  "stopwords",
  "unicode-segmentation",
 ]
