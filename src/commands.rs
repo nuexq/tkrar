@@ -21,20 +21,22 @@ pub fn count_words_from_file(target: &Path, args: &CliArgs) -> Result<(), CliErr
 pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<(), CliError> {
     let mut word_count = IndexMap::new();
 
-    let stops: HashSet<String> = Spark::stopwords(Language::English)
-        .unwrap()
-        .into_iter()
-        .map(|s| s.to_string())
-        .collect();
-
     for line in reader.lines() {
         let line = line?;
 
         for word in line.unicode_words() {
             let cleaned = handle_case_sensitive(word, args.case_sensitive);
 
-            if args.no_stopwords && stops.contains(&cleaned.to_lowercase()) {
-                continue;
+            if args.no_stopwords {
+                let stops: HashSet<String> = Spark::stopwords(Language::English)
+                    .unwrap()
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect();
+
+                if stops.contains(&cleaned.to_lowercase()) {
+                    continue;
+                }
             }
 
             *word_count.entry(cleaned).or_insert(0) += 1;
@@ -70,4 +72,3 @@ fn handle_case_sensitive(word: &str, case_sensitive: bool) -> String {
         word.to_lowercase()
     }
 }
-
