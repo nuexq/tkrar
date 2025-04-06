@@ -1,5 +1,6 @@
+use clap::Parser;
+use cli::CliArgs;
 use std::io::{self, IsTerminal};
-use std::path::PathBuf;
 
 mod cli;
 mod commands;
@@ -15,19 +16,14 @@ fn main() {
 }
 
 fn real_main() -> Result<(), CliError> {
-    let matches = cli::setup_cli().get_matches();
-
-    let top = matches.get_one::<usize>("top").copied();
-    let sort = matches.get_one::<String>("sort");
-    let case_sensitive = matches.get_flag("case_sensitive");
-    let no_stopwords = matches.get_flag("no_stopwords");
-
+    let args = CliArgs::parse();
     let stdin = io::stdin();
-    match matches.get_one::<PathBuf>("target") {
-        Some(target) => commands::count_words(target, sort, top, case_sensitive, no_stopwords)?,
+
+    match &args.target {
+        Some(target) => commands::count_words_from_file(target, &args)?,
         None if !stdin.is_terminal() => {
             let reader = stdin.lock();
-            commands::count_words_from_reader(reader, sort, top, case_sensitive, no_stopwords)?;
+            commands::count_words_from_reader(reader, &args)?;
         }
         None => return Err(CliError::Other("No target file or stdin".to_string())),
     }

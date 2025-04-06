@@ -10,27 +10,15 @@ use color_print::cprintln;
 use stopwords::{Language, Spark, Stopwords};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::error::CliError;
+use crate::{cli::CliArgs, error::CliError};
 
-pub fn count_words(
-    target: &Path,
-    sort: Option<&String>,
-    top: Option<usize>,
-    case_sensitive: bool,
-    no_stopwords: bool,
-) -> Result<(), CliError> {
+pub fn count_words_from_file(target: &Path, args: &CliArgs) -> Result<(), CliError> {
     let file = File::open(target)?;
     let reader = BufReader::new(file);
-    count_words_from_reader(reader, sort, top, case_sensitive, no_stopwords)
+    count_words_from_reader(reader, args)
 }
 
-pub fn count_words_from_reader<R: BufRead>(
-    reader: R,
-    sort: Option<&String>,
-    top: Option<usize>,
-    case_sensitive: bool,
-    no_stopwords: bool,
-) -> Result<(), CliError> {
+pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<(), CliError> {
     let mut word_count = IndexMap::new();
 
     let stops: HashSet<String> = Spark::stopwords(Language::English)
@@ -43,9 +31,9 @@ pub fn count_words_from_reader<R: BufRead>(
         let line = line?;
 
         for word in line.unicode_words() {
-            let cleaned = handle_case_sensitive(word, case_sensitive);
+            let cleaned = handle_case_sensitive(word, args.case_sensitive);
 
-            if no_stopwords && stops.contains(&cleaned.to_lowercase()) {
+            if args.no_stopwords && stops.contains(&cleaned.to_lowercase()) {
                 continue;
             }
 
@@ -53,18 +41,15 @@ pub fn count_words_from_reader<R: BufRead>(
         }
     }
 
-    // Sort the words by frequency
     let mut sorted: Box<[_]> = word_count.into_iter().collect();
-    if let Some(sort) = sort {
-        if sort == "asc" {
-            sorted.sort_by(|a, b| a.1.cmp(&b.1));
-        } else {
-            sorted.sort_by(|a, b| b.1.cmp(&a.1));
-        }
+
+    if args.sort == "asc" {
+        sorted.sort_by(|a, b| a.1.cmp(&b.1));
+    } else {
+        sorted.sort_by(|a, b| b.1.cmp(&a.1));
     }
 
-    // Print the top N words
-    let count = top.unwrap_or(sorted.len());
+    let count = args.top.unwrap_or(sorted.len());
 
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
         cprintln!(
@@ -74,10 +59,10 @@ pub fn count_words_from_reader<R: BufRead>(
             freq,
         );
     }
+
     Ok(())
 }
 
-// handle case sensitivity
 fn handle_case_sensitive(word: &str, case_sensitive: bool) -> String {
     if case_sensitive {
         word.to_string()
@@ -85,3 +70,4 @@ fn handle_case_sensitive(word: &str, case_sensitive: bool) -> String {
         word.to_lowercase()
     }
 }
+
