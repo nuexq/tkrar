@@ -23,7 +23,7 @@ fn real_main() -> Result<(), CliError> {
         Some(target) => commands::count_words_from_file(target, &args)?,
         None if !stdin.is_terminal() => {
             let reader = stdin.lock();
-            commands::count_words_from_reader(reader, &args)?;
+            commands::count_words_from_stdin(reader, &args)?;
         }
         None => {
             return Err(CliError::MissingRequiredArgument(
@@ -34,3 +34,4 @@ fn real_main() -> Result<(), CliError> {
 
     Ok(())
 }
+

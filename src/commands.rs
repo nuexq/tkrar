@@ -2,8 +2,8 @@ use indexmap::IndexMap;
 use std::{
     collections::HashSet,
     fs::File,
-    io::{BufRead, BufReader},
-    path::Path,
+    io::{BufRead, BufReader, StdinLock},
+    path::PathBuf,
 };
 
 use color_print::cprintln;
@@ -12,13 +12,38 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{cli::CliArgs, error::CliError};
 
-pub fn count_words_from_file(target: &Path, args: &CliArgs) -> Result<(), CliError> {
-    let file = File::open(target)?;
-    let reader = BufReader::new(file);
-    count_words_from_reader(reader, args)
+// count_words fn for single or multiple files
+pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
+    // defind a variable to store the word count of each file
+    let mut files_word_count: IndexMap<String, i32> = IndexMap::new();
+
+    // iterate over the files in the target vector
+    for file in target {
+        let open_file = File::open(file)?;
+        let reader = BufReader::new(open_file);
+        let word_count = count_words_from_reader(reader, args)?;
+        files_word_count.extend(word_count);
+    }
+
+    output_results(args, files_word_count);
+
+    Ok(())
 }
 
-pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<(), CliError> {
+// count_words fn for stdin
+pub fn count_words_from_stdin(reader: StdinLock, args: &CliArgs) -> Result<(), CliError> {
+    let word_count = count_words_from_reader(reader, args)?;
+
+    output_results(args, word_count);
+
+    Ok(())
+}
+
+// return a map of word counts
+pub fn count_words_from_reader<R: BufRead>(
+    reader: R,
+    args: &CliArgs,
+) -> Result<IndexMap<String, i32>, CliError> {
     let stopwords = if args.no_stopwords {
         Some(load_stopwords()?)
     } else {
@@ -27,11 +52,13 @@ pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<
 
     let word_count = process_words(reader, args.case_sensitive, args.min_char, &stopwords);
 
+    Ok(word_count)
+}
+
+fn output_results(args: &CliArgs, word_count: IndexMap<String, i32>) {
     let sorted = sort_word_counts(&args.sort, word_count);
 
     print_results(args.top, sorted);
-
-    Ok(())
 }
 
 fn process_words<R: BufRead>(

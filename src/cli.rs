@@ -9,7 +9,7 @@ use std::path::PathBuf;
 )]
 pub struct CliArgs {
     /// Path to the target file
-    pub target: Option<PathBuf>,
+    pub target: Option<Vec<PathBuf>>,
 
     /// Show the N most frequent words
     #[arg(short, long, value_name = "N")]
