@@ -25,7 +25,7 @@ pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<
         None
     };
 
-    let word_count = process_words(reader, args.case_sensitive, &stopwords);
+    let word_count = process_words(reader, args.case_sensitive, args.min_char, &stopwords);
 
     let sorted = sort_word_counts(&args.sort, word_count);
 
@@ -37,13 +37,14 @@ pub fn count_words_from_reader<R: BufRead>(reader: R, args: &CliArgs) -> Result<
 fn process_words<R: BufRead>(
     reader: R,
     case_sensitive: bool,
+    min_char: Option<usize>,
     stopwords: &Option<HashSet<String>>,
 ) -> IndexMap<String, i32> {
     let mut word_count = IndexMap::new();
 
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
-            if let Some(cleaned) = preprocess_word(word, case_sensitive, stopwords) {
+            if let Some(cleaned) = preprocess_word(word, case_sensitive, min_char, stopwords) {
                 *word_count.entry(cleaned).or_insert(0) += 1;
             }
         }
@@ -55,6 +56,7 @@ fn process_words<R: BufRead>(
 fn preprocess_word(
     word: &str,
     case_sensitive: bool,
+    min_char: Option<usize>,
     stopwords: &Option<HashSet<String>>,
 ) -> Option<String> {
     let cleaned = if case_sensitive {
@@ -65,6 +67,12 @@ fn preprocess_word(
 
     if let Some(stops) = stopwords {
         if stops.contains(&cleaned.to_lowercase()) {
+            return None;
+        }
+    }
+
+    if let Some(min) = min_char {
+        if cleaned.graphemes(true).count() < min {
             return None;
         }
     }

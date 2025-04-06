@@ -15,6 +15,10 @@ pub struct CliArgs {
     #[arg(short, long, value_name = "N")]
     pub top: Option<usize>,
 
+    /// Exclude words with less than N characters
+    #[arg(short = 'm', long = "min-char", value_name = "N")]
+    pub min_char: Option<usize>,
+
     /// Sort order (asc or desc)
     #[arg(short, long, default_value = "desc", value_parser = ["asc", "desc"])]
     pub sort: String,
