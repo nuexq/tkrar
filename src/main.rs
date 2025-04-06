@@ -25,8 +25,13 @@ fn real_main() -> Result<(), CliError> {
             let reader = stdin.lock();
             commands::count_words_from_reader(reader, &args)?;
         }
-        None => return Err(CliError::Other("No target file or stdin".to_string())),
+        None => {
+            return Err(CliError::MissingRequiredArgument(
+                "No target file or stdin found.".to_string(),
+            ));
+        }
     }
 
     Ok(())
 }
+
