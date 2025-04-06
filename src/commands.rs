@@ -1,6 +1,5 @@
-use indexmap::IndexMap;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs::File,
     io::{BufRead, BufReader, StdinLock},
     path::PathBuf,
@@ -15,7 +14,7 @@ use crate::{cli::CliArgs, error::CliError};
 // count_words fn for single or multiple files
 pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
     // defind a variable to store the word count of each file
-    let mut files_word_count: IndexMap<String, i32> = IndexMap::new();
+    let mut files_word_count = HashMap::new();
 
     // iterate over the files in the target vector
     for file in target {
@@ -43,7 +42,7 @@ pub fn count_words_from_stdin(reader: StdinLock, args: &CliArgs) -> Result<(), C
 pub fn count_words_from_reader<R: BufRead>(
     reader: R,
     args: &CliArgs,
-) -> Result<IndexMap<String, i32>, CliError> {
+) -> Result<HashMap<String, i32>, CliError> {
     let stopwords = if args.no_stopwords {
         Some(load_stopwords()?)
     } else {
@@ -55,7 +54,7 @@ pub fn count_words_from_reader<R: BufRead>(
     Ok(word_count)
 }
 
-fn output_results(args: &CliArgs, word_count: IndexMap<String, i32>) {
+fn output_results(args: &CliArgs, word_count: HashMap<String, i32>) {
     let sorted = sort_word_counts(&args.sort, word_count);
 
     print_results(args.top, sorted);
@@ -66,8 +65,8 @@ fn process_words<R: BufRead>(
     case_sensitive: bool,
     min_char: Option<usize>,
     stopwords: &Option<HashSet<String>>,
-) -> IndexMap<String, i32> {
-    let mut word_count = IndexMap::new();
+) -> HashMap<String, i32> {
+    let mut word_count = HashMap::new();
 
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
@@ -115,7 +114,7 @@ fn load_stopwords() -> Result<HashSet<String>, CliError> {
         .collect())
 }
 
-fn sort_word_counts(order: &str, word_count: IndexMap<String, i32>) -> Box<[(String, i32)]> {
+fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Box<[(String, i32)]> {
     let mut sorted: Box<[_]> = word_count.into_iter().collect();
 
     match order {
