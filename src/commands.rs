@@ -114,8 +114,8 @@ fn load_stopwords() -> Result<HashSet<String>, CliError> {
         .collect())
 }
 
-fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Box<[(String, i32)]> {
-    let mut sorted: Box<[_]> = word_count.into_iter().collect();
+fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(String, i32)> {
+    let mut sorted: Vec<(String, i32)> = word_count.into_iter().collect();
 
     match order {
         "asc" => sorted.sort_by(|a, b| a.1.cmp(&b.1)),
@@ -125,7 +125,7 @@ fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Box<[(Stri
     sorted
 }
 
-fn print_results(top: Option<usize>, sorted: Box<[(String, i32)]>) {
+fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>) {
     let count = top.unwrap_or(sorted.len());
 
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
