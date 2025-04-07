@@ -26,6 +26,7 @@ static STOPWORDS: Lazy<Arc<HashSet<String>>> = Lazy::new(|| {
 
 pub struct Filters<'a> {
     case_sensitive: bool,
+    alphabetic_only: bool,
     min_char: Option<usize>,
     ignore_words: &'a Option<Regex>,
     stopwords: &'a Option<Arc<HashSet<String>>>,
@@ -35,6 +36,7 @@ impl<'a> Filters<'a> {
     pub fn filter_word(&self, word: &str) -> Option<String> {
         let Filters {
             case_sensitive,
+            alphabetic_only,
             min_char,
             ignore_words,
             stopwords,
@@ -46,6 +48,11 @@ impl<'a> Filters<'a> {
             word.to_lowercase()
         };
 
+        if *alphabetic_only {
+            if !cleaned.chars().all(|c| c.is_alphabetic()) {
+                return None;
+            }
+        }
         if let Some(stops) = stopwords {
             if stops.contains(&cleaned.to_lowercase()) {
                 return None;
@@ -107,6 +114,7 @@ pub fn count_words_from_reader<R: BufRead>(
     };
     let filters = Filters {
         case_sensitive: args.case_sensitive,
+        alphabetic_only: args.alphabetic_only,
         min_char: args.min_char,
         ignore_words: &args.ignore_words,
         stopwords: &stopwords,

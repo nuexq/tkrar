@@ -35,5 +35,9 @@ pub struct CliArgs {
     /// Ignore words provided with regex patterns
     #[arg(long = "ignore-words", short = 'i', value_name = "REGEX")]
     pub ignore_words: Option<Regex>,
+
+    /// Ignore non-alphanumeric characters
+    #[arg(long)]
+    pub alphabetic_only: bool,
 }
 
