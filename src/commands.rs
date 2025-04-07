@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use std::{
     collections::{HashMap, HashSet},
-    fs::File,
+    fs::{self, File},
     io::{BufRead, BufReader, StdinLock},
     path::PathBuf,
     sync::Arc,
@@ -80,17 +80,51 @@ pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<()
     // defind a variable to store the word count of each file
     let mut files_word_count = HashMap::new();
 
-    // iterate over the files in the target vector
-    for file in target {
-        let open_file = File::open(file)?;
-        let reader = BufReader::new(open_file);
-        let word_count = count_words_from_reader(reader, args)?;
-        files_word_count.extend(word_count);
+    // iterate over the files/dir in the target vector
+    for path in target {
+        // if the path is a dir, recurse into it, if the path is a file, count the words
+        if path.is_dir() {
+            let word_count = recursive_count(path, args)?;
+            files_word_count.extend(word_count);
+        } else if path.is_file() {
+            let open_file = File::open(path)?;
+            let reader = BufReader::new(open_file);
+            let word_count = count_words_from_reader(reader, args)?;
+
+            files_word_count.extend(word_count);
+        }
     }
 
     output_results(args.top, &args.sort, files_word_count);
 
     Ok(())
+}
+
+pub fn recursive_count(path: &PathBuf, args: &CliArgs) -> Result<HashMap<String, i32>, CliError> {
+    let mut total_word_count = HashMap::new();
+
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let subdir_count = recursive_count(&path, args)?;
+                merge_word_counts(&mut total_word_count, subdir_count);
+            } else if path.is_file() {
+                let open_file = File::open(path)?;
+                let reader = BufReader::new(open_file);
+                let word_count = count_words_from_reader(reader, args)?;
+                merge_word_counts(&mut total_word_count, word_count);
+            }
+        }
+    }
+
+    Ok(total_word_count)
+}
+
+fn merge_word_counts(main_map: &mut HashMap<String, i32>, other_map: HashMap<String, i32>) {
+    for (word, count) in other_map {
+        *main_map.entry(word).or_insert(0) += count;
+    }
 }
 
 // count_words fn for stdin

@@ -40,4 +40,3 @@ pub struct CliArgs {
     #[arg(long)]
     pub alphabetic_only: bool,
 }
-
