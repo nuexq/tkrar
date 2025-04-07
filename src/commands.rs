@@ -24,6 +24,50 @@ static STOPWORDS: Lazy<Arc<HashSet<String>>> = Lazy::new(|| {
     )
 });
 
+pub struct Filters<'a> {
+    case_sensitive: bool,
+    min_char: Option<usize>,
+    ignore_words: &'a Option<Regex>,
+    stopwords: &'a Option<HashSet<String>>,
+}
+
+impl<'a> Filters<'a> {
+    pub fn filter_word(&self, word: &str) -> Option<String> {
+        let Filters {
+            case_sensitive,
+            min_char,
+            ignore_words,
+            stopwords,
+        } = self;
+
+        let cleaned = if *case_sensitive {
+            word.to_string()
+        } else {
+            word.to_lowercase()
+        };
+
+        if let Some(stops) = stopwords {
+            if stops.contains(&cleaned.to_lowercase()) {
+                return None;
+            }
+        }
+
+        if let Some(min) = *min_char {
+            if cleaned.graphemes(true).count() < min {
+                return None;
+            }
+        }
+
+        if let Some(ignore_words) = ignore_words {
+            if ignore_words.is_match(&cleaned) {
+                return None;
+            }
+        }
+
+        Some(cleaned)
+    }
+}
+
 // count_words fn for single or multiple files
 pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
     // defind a variable to store the word count of each file
@@ -61,14 +105,14 @@ pub fn count_words_from_reader<R: BufRead>(
     } else {
         None
     };
+    let filters = Filters {
+        case_sensitive: args.case_sensitive,
+        min_char: args.min_char,
+        ignore_words: &args.ignore_words,
+        stopwords: &stopwords,
+    };
 
-    let word_count = process_words(
-        reader,
-        args.case_sensitive,
-        args.min_char,
-        &args.ignore_words,
-        &stopwords,
-    );
+    let word_count = process_words(reader, filters);
 
     Ok(word_count)
 }
@@ -79,60 +123,18 @@ fn output_results(args: &CliArgs, word_count: HashMap<String, i32>) {
     print_results(args.top, sorted);
 }
 
-fn process_words<R: BufRead>(
-    reader: R,
-    case_sensitive: bool,
-    min_char: Option<usize>,
-    ignore_words: &Option<Regex>,
-    stopwords: &Option<HashSet<String>>,
-) -> HashMap<String, i32> {
+fn process_words<R: BufRead>(reader: R, filters: Filters) -> HashMap<String, i32> {
     let mut word_count = HashMap::new();
 
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
-            if let Some(cleaned) =
-                preprocess_word(word, case_sensitive, min_char, ignore_words, stopwords)
-            {
+            if let Some(cleaned) = filters.filter_word(word) {
                 *word_count.entry(cleaned).or_insert(0) += 1;
             }
         }
     }
 
     word_count
-}
-
-fn preprocess_word(
-    word: &str,
-    case_sensitive: bool,
-    min_char: Option<usize>,
-    ignore_words: &Option<Regex>,
-    stopwords: &Option<HashSet<String>>,
-) -> Option<String> {
-    let cleaned = if case_sensitive {
-        word.to_string()
-    } else {
-        word.to_lowercase()
-    };
-
-    if let Some(stops) = stopwords {
-        if stops.contains(&cleaned.to_lowercase()) {
-            return None;
-        }
-    }
-
-    if let Some(min) = min_char {
-        if cleaned.graphemes(true).count() < min {
-            return None;
-        }
-    }
-
-    if let Some(ignore_words) = ignore_words {
-        if ignore_words.is_match(&cleaned) {
-            return None;
-        }
-    }
-
-    Some(cleaned)
 }
 
 fn load_stopwords() -> Result<HashSet<String>, CliError> {
