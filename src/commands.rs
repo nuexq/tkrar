@@ -28,7 +28,7 @@ pub struct Filters<'a> {
     case_sensitive: bool,
     min_char: Option<usize>,
     ignore_words: &'a Option<Regex>,
-    stopwords: &'a Option<HashSet<String>>,
+    stopwords: &'a Option<Arc<HashSet<String>>>,
 }
 
 impl<'a> Filters<'a> {
@@ -81,7 +81,7 @@ pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<()
         files_word_count.extend(word_count);
     }
 
-    output_results(args, files_word_count);
+    output_results(args.top, &args.sort, files_word_count);
 
     Ok(())
 }
@@ -90,7 +90,7 @@ pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<()
 pub fn count_words_from_stdin(reader: StdinLock, args: &CliArgs) -> Result<(), CliError> {
     let word_count = count_words_from_reader(reader, args)?;
 
-    output_results(args, word_count);
+    output_results(args.top, &args.sort, word_count);
 
     Ok(())
 }
@@ -117,10 +117,10 @@ pub fn count_words_from_reader<R: BufRead>(
     Ok(word_count)
 }
 
-fn output_results(args: &CliArgs, word_count: HashMap<String, i32>) {
-    let sorted = sort_word_counts(&args.sort, word_count);
+fn output_results(top: Option<usize>, sort: &str, word_count: HashMap<String, i32>) {
+    let sorted = sort_word_counts(sort, word_count);
 
-    print_results(args.top, sorted);
+    print_results(top, sorted);
 }
 
 fn process_words<R: BufRead>(reader: R, filters: Filters) -> HashMap<String, i32> {
@@ -137,8 +137,8 @@ fn process_words<R: BufRead>(reader: R, filters: Filters) -> HashMap<String, i32
     word_count
 }
 
-fn load_stopwords() -> Result<HashSet<String>, CliError> {
-    Ok(STOPWORDS.as_ref().clone()) // Clone the HashSet only when needed
+fn load_stopwords() -> Result<Arc<HashSet<String>>, CliError> {
+    Ok(Arc::clone(&STOPWORDS))
 }
 
 fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(String, i32)> {
