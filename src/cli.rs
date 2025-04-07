@@ -30,4 +30,13 @@ pub struct CliArgs {
     /// Ignore stopwords when counting words
     #[arg(long)]
     pub no_stopwords: bool,
+
+    /// Ignore words provided
+    #[arg(
+        short = 'i',
+        long = "ignore-words",
+        value_delimiter = ',',
+        value_name = "WORDS"
+    )]
+    pub ignore_words: Option<Vec<String>>,
 }

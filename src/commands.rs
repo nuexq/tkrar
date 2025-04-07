@@ -61,7 +61,13 @@ pub fn count_words_from_reader<R: BufRead>(
         None
     };
 
-    let word_count = process_words(reader, args.case_sensitive, args.min_char, &stopwords);
+    let word_count = process_words(
+        reader,
+        args.case_sensitive,
+        args.min_char,
+        &args.ignore_words,
+        &stopwords,
+    );
 
     Ok(word_count)
 }
@@ -76,13 +82,16 @@ fn process_words<R: BufRead>(
     reader: R,
     case_sensitive: bool,
     min_char: Option<usize>,
+    ignore_words: &Option<Vec<String>>,
     stopwords: &Option<HashSet<String>>,
 ) -> HashMap<String, i32> {
     let mut word_count = HashMap::new();
 
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
-            if let Some(cleaned) = preprocess_word(word, case_sensitive, min_char, stopwords) {
+            if let Some(cleaned) =
+                preprocess_word(word, case_sensitive, min_char, &ignore_words, stopwords)
+            {
                 *word_count.entry(cleaned).or_insert(0) += 1;
             }
         }
@@ -95,6 +104,7 @@ fn preprocess_word(
     word: &str,
     case_sensitive: bool,
     min_char: Option<usize>,
+    ignore_words: &Option<Vec<String>>,
     stopwords: &Option<HashSet<String>>,
 ) -> Option<String> {
     let cleaned = if case_sensitive {
@@ -111,6 +121,12 @@ fn preprocess_word(
 
     if let Some(min) = min_char {
         if cleaned.graphemes(true).count() < min {
+            return None;
+        }
+    }
+
+    if let Some(ignore_words) = ignore_words {
+        if ignore_words.contains(&cleaned) {
             return None;
         }
     }
