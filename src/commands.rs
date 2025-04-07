@@ -8,6 +8,7 @@ use std::{
 };
 
 use color_print::cprintln;
+use regex::Regex;
 use stopwords::{Language, Spark, Stopwords};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -82,7 +83,7 @@ fn process_words<R: BufRead>(
     reader: R,
     case_sensitive: bool,
     min_char: Option<usize>,
-    ignore_words: &Option<Vec<String>>,
+    ignore_words: &Option<Regex>,
     stopwords: &Option<HashSet<String>>,
 ) -> HashMap<String, i32> {
     let mut word_count = HashMap::new();
@@ -90,7 +91,7 @@ fn process_words<R: BufRead>(
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
             if let Some(cleaned) =
-                preprocess_word(word, case_sensitive, min_char, &ignore_words, stopwords)
+                preprocess_word(word, case_sensitive, min_char, ignore_words, stopwords)
             {
                 *word_count.entry(cleaned).or_insert(0) += 1;
             }
@@ -104,7 +105,7 @@ fn preprocess_word(
     word: &str,
     case_sensitive: bool,
     min_char: Option<usize>,
-    ignore_words: &Option<Vec<String>>,
+    ignore_words: &Option<Regex>,
     stopwords: &Option<HashSet<String>>,
 ) -> Option<String> {
     let cleaned = if case_sensitive {
@@ -126,7 +127,7 @@ fn preprocess_word(
     }
 
     if let Some(ignore_words) = ignore_words {
-        if ignore_words.contains(&cleaned) {
+        if ignore_words.is_match(&cleaned) {
             return None;
         }
     }

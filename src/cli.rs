@@ -1,4 +1,5 @@
 use clap::Parser;
+use regex::Regex;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -31,12 +32,8 @@ pub struct CliArgs {
     #[arg(long)]
     pub no_stopwords: bool,
 
-    /// Ignore words provided
-    #[arg(
-        short = 'i',
-        long = "ignore-words",
-        value_delimiter = ',',
-        value_name = "WORDS"
-    )]
-    pub ignore_words: Option<Vec<String>>,
+    /// Ignore words provided with regex patterns
+    #[arg(long = "ignore-words", short = 'i', value_name = "REGEX")]
+    pub ignore_words: Option<Regex>,
 }
+
