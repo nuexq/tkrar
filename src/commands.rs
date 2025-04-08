@@ -172,7 +172,7 @@ pub fn count_words_from_reader<R: BufRead>(
 fn output_results(top: Option<usize>, sort: &str, word_count: HashMap<String, i32>) {
     let sorted = sort_word_counts(sort, word_count);
 
-    // print_results(top, sorted);
+    print_results(top, sorted);
 }
 
 fn process_words<R: BufRead>(reader: R, filters: Filters) -> HashMap<String, i32> {
