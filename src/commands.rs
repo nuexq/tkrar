@@ -11,7 +11,6 @@ use color_print::cprintln;
 use regex::Regex;
 use stopwords::{Language, Spark, Stopwords};
 use unicode_segmentation::UnicodeSegmentation;
-use rayon::prelude::*;
 
 use crate::{cli::CliArgs, error::CliError};
 
@@ -102,7 +101,7 @@ pub fn count_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError
     let all_files = collect_files(target);
 
     let word_counts: Vec<HashMap<String, i32>> = all_files
-        .par_iter()
+        .iter()
         .filter_map(|file| match File::open(file) {
             Ok(open_file) => {
                 let reader = BufReader::new(open_file);
