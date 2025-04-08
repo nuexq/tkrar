@@ -75,50 +75,59 @@ impl<'a> Filters<'a> {
     }
 }
 
-// count_words fn for single or multiple files
-pub fn count_words_from_file(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
-    // defind a variable to store the word count of each file
-    let mut files_word_count = HashMap::new();
-
-    // iterate over the files/dir in the target vector
+// collect file paths recursively
+fn collect_files(target: &Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut files = Vec::new();
     for path in target {
-        // if the path is a dir, recurse into it, if the path is a file, count the words
-        if path.is_dir() {
-            let word_count = recursive_count(path, args)?;
-            files_word_count.extend(word_count);
-        } else if path.is_file() {
-            let open_file = File::open(path)?;
-            let reader = BufReader::new(open_file);
-            let word_count = count_words_from_reader(reader, args)?;
-
-            files_word_count.extend(word_count);
-        }
-    }
-
-    output_results(args.top, &args.sort, files_word_count);
-
-    Ok(())
-}
-
-pub fn recursive_count(path: &PathBuf, args: &CliArgs) -> Result<HashMap<String, i32>, CliError> {
-    let mut total_word_count = HashMap::new();
-
-    if let Ok(entries) = fs::read_dir(path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                let subdir_count = recursive_count(&path, args)?;
-                merge_word_counts(&mut total_word_count, subdir_count);
-            } else if path.is_file() {
-                let open_file = File::open(path)?;
-                let reader = BufReader::new(open_file);
-                let word_count = count_words_from_reader(reader, args)?;
-                merge_word_counts(&mut total_word_count, word_count);
+        if path.is_file() {
+            files.push(path.clone());
+        } else if path.is_dir() {
+            if let Ok(entries) = fs::read_dir(path) {
+                for entry in entries.flatten() {
+                    let subpath = entry.path();
+                    if subpath.is_file() {
+                        files.push(subpath);
+                    } else if subpath.is_dir() {
+                        files.extend(collect_files(&vec![subpath]));
+                    }
+                }
             }
         }
     }
+    files
+}
 
-    Ok(total_word_count)
+pub fn count_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
+    let all_files = collect_files(target);
+
+    let word_counts: Vec<HashMap<String, i32>> = all_files
+        .iter()
+        .filter_map(|file| match File::open(file) {
+            Ok(open_file) => {
+                let reader = BufReader::new(open_file);
+                match count_words_from_reader(reader, args) {
+                    Ok(wc) => Some(wc),
+                    Err(e) => {
+                        eprintln!("Error processing file {}: {}", file.display(), e);
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Error opening file {}: {}", file.display(), e);
+                None
+            }
+        })
+        .collect();
+
+    let mut total_word_count = HashMap::new();
+    for wc in word_counts {
+        merge_word_counts(&mut total_word_count, wc);
+    }
+
+    output_results(args.top, &args.sort, total_word_count);
+
+    Ok(())
 }
 
 fn merge_word_counts(main_map: &mut HashMap<String, i32>, other_map: HashMap<String, i32>) {
