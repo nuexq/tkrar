@@ -20,7 +20,7 @@ fn real_main() -> Result<(), CliError> {
     let stdin = io::stdin();
 
     match &args.target {
-        Some(target) => commands::count_words(target, &args)?,
+        Some(target) => commands::count_freq_of_words(target, &args)?,
         None if !stdin.is_terminal() => {
             let reader = stdin.lock();
             commands::count_words_from_stdin(reader, &args)?;
