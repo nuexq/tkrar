@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[command(
     name = "tkrar",
     author = "nuexq",
-    about = "Count frequency of words in a file"
+    about = "Count frequency of words in a file or a directory"
 )]
 pub struct CliArgs {
     /// Path to the target file
