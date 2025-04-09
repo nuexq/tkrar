@@ -16,9 +16,9 @@ use crate::{cli::CliArgs, error::CliError};
 static STOPWORDS: Lazy<Arc<HashSet<String>>> = Lazy::new(|| {
     Arc::new(
         Spark::stopwords(Language::English)
-            .unwrap()
+            .expect("Failed to load embedded English stopwords") // Panic with message
             .into_iter()
-            .map(|s| s.to_string())
+            .map(|s| s.to_string()) // Assumes stopwords library provides owned Strings or &str
             .collect(),
     )
 });
@@ -49,6 +49,12 @@ fn collect_files(target: &Vec<PathBuf>) -> Result<Vec<PathBuf>, CliError> {
 }
 
 pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), CliError> {
+    let stopwords_set = if args.no_stopwords {
+        Some(Arc::clone(&STOPWORDS)) // Clone the Arc, cheap
+    } else {
+        None
+    };
+
     let all_files = collect_files(target)?;
 
     let word_counts = all_files
@@ -56,7 +62,7 @@ pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), 
         .filter_map(|file| match File::open(file) {
             Ok(open_file) => {
                 let reader = BufReader::new(open_file);
-                match count_freq_of_words_from_reader(reader, args) {
+                match count_freq_of_words_from_reader(reader, args, &stopwords_set) {
                     Ok(wc) => Some(wc),
                     Err(e) => {
                         eprintln!("Error processing file {}: {}", file.display(), e);
@@ -88,7 +94,13 @@ pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), 
 
 // count_words fn for stdin
 pub fn count_words_from_stdin(reader: StdinLock, args: &CliArgs) -> Result<(), CliError> {
-    let word_count = count_freq_of_words_from_reader(reader, args)?;
+    let stopwords_set = if args.no_stopwords {
+        Some(Arc::clone(&STOPWORDS))
+    } else {
+        None
+    };
+
+    let word_count = count_freq_of_words_from_reader(reader, args, &stopwords_set)?;
 
     output_results(args.top, &args.sort, word_count);
 
@@ -106,8 +118,9 @@ fn merge_word_counts(main_map: &mut HashMap<String, i32>, other_map: HashMap<Str
 pub fn count_freq_of_words_from_reader<R: BufRead>(
     reader: R,
     args: &CliArgs,
+    stopwords: &Option<Arc<HashSet<String>>>,
 ) -> Result<HashMap<String, i32>, CliError> {
-    let word_count = process_words(reader, args);
+    let word_count = process_words(reader, args, stopwords);
 
     Ok(word_count)
 }
@@ -118,12 +131,16 @@ fn output_results(top: Option<usize>, sort: &str, word_count: HashMap<String, i3
     print_results(top, sorted);
 }
 
-fn process_words<R: BufRead>(reader: R, args: &CliArgs) -> HashMap<String, i32> {
+fn process_words<R: BufRead>(
+    reader: R,
+    args: &CliArgs,
+    stopwords: &Option<Arc<HashSet<String>>>,
+) -> HashMap<String, i32> {
     let mut word_count = HashMap::new();
 
     for line in reader.lines().flatten() {
         for word in line.unicode_words() {
-            if !filter_words(word, args).unwrap() {
+            if !filter_words(word, args, stopwords) {
                 continue;
             }
 
@@ -140,53 +157,57 @@ fn process_words<R: BufRead>(reader: R, args: &CliArgs) -> HashMap<String, i32> 
     word_count
 }
 
-fn load_stopwords() -> Result<Arc<HashSet<String>>, CliError> {
-    Ok(Arc::clone(&STOPWORDS))
-}
-
-fn filter_words(word: &str, args: &CliArgs) -> Result<bool, CliError> {
-    let stopwords = if args.no_stopwords {
-        Some(load_stopwords()?)
-    } else {
-        None
-    };
-
-    let cleaned = if args.case_sensitive {
+fn filter_words(
+    word: &str,
+    args: &CliArgs,
+    stopwords: &Option<Arc<HashSet<String>>>, // Accept stopwords
+) -> bool {
+    let check_word = if args.case_sensitive {
         word.to_string()
     } else {
         word.to_lowercase()
     };
 
     if args.alphabetic_only {
-        if !cleaned.chars().all(|c| c.is_alphabetic()) {
-            return Ok(false);
+        let word_for_alpha_check = if args.case_sensitive {
+            word
+        } else {
+            &check_word
+        };
+        if !word_for_alpha_check.chars().all(|c| c.is_alphabetic()) {
+            return false;
         }
     }
-    if let Some(stops) = &stopwords {
-        if args.case_sensitive {
-            if stops.contains(&cleaned.to_lowercase()) {
-                return Ok(false);
-            }
-        } else {
-            if stops.contains(&cleaned) {
-                return Ok(false);
-            }
+
+    if let Some(stops) = stopwords {
+        if stops.contains(&word.to_lowercase()) {
+            return false;
         }
     }
 
     if let Some(min) = args.min_char {
-        if cleaned.graphemes(true).count() < min {
-            return Ok(false);
+        let word_for_len_check = if args.case_sensitive {
+            word
+        } else {
+            &check_word
+        };
+        if word_for_len_check.graphemes(true).count() < min {
+            return false;
         }
     }
 
-    if let Some(ignore_words) = &args.ignore_words {
-        if ignore_words.is_match(&cleaned) {
-            return Ok(false);
+    if let Some(ignore_regex) = &args.ignore_words {
+        let word_for_regex_check = if args.case_sensitive {
+            word
+        } else {
+            &check_word
+        };
+        if ignore_regex.is_match(word_for_regex_check) {
+            return false;
         }
     }
 
-    Ok(true)
+    true
 }
 
 fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(String, i32)> {
@@ -205,7 +226,7 @@ fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>) {
 
     for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
         cprintln!(
-            "<k!>{:>2}.</> <w!>{:<15}</> <bold,y>{}</>",
+            "<k!>{:>2}.</> <w!>{:<15}</> <bold,g>{}</>",
             i + 1,
             word,
             freq,
