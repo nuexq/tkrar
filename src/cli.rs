@@ -36,6 +36,10 @@ pub struct CliArgs {
     #[arg(long = "ignore-words", short = 'i', value_name = "REGEX")]
     pub ignore_words: Option<Regex>,
 
+    /// Ignore provided files
+    #[arg(long = "ignore-files", short = 'I', value_name = "FILE", value_delimiter = ',')]
+    pub ignore_files: Option<Vec<String>>,
+
     /// Ignore non-alphanumeric characters
     #[arg(long)]
     pub alphabetic_only: bool,
