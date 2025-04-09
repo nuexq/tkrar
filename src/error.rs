@@ -3,7 +3,6 @@ use std::fmt;
 use color_print::cwrite;
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum CliError {
     Io(std::io::Error),
     MissingRequiredArgument(String),
