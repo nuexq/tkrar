@@ -2,6 +2,7 @@
 name = "tkrar"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 atty = "0.2.14"
