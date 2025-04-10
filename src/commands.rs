@@ -61,8 +61,6 @@ pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), 
             !args.ignore_files.as_ref().map_or(false, |ignore_files| {
                 ignore_files.contains(
                     &file
-                        .file_name()
-                        .unwrap_or_default()
                         .to_string_lossy()
                         .to_string(),
                 )
