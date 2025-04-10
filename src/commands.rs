@@ -1,4 +1,5 @@
 use crate::{cli::CliArgs, error::CliError};
+use atty;
 use color_print::{ceprintln, cprintln};
 use once_cell::sync::Lazy;
 use std::{
@@ -181,8 +182,15 @@ fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(Strin
 
 fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>) {
     let count = top.unwrap_or(sorted.len());
-    for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
-        cprintln!("<w!>{:>2}. {:<15} <g>{}</>", i + 1, word, freq);
+
+    if atty::is(atty::Stream::Stdout) {
+        for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
+            cprintln!("<w!>{:>2}. {:<15} <g>{}</>", i + 1, word, freq);
+        }
+    } else {
+        for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
+            println!("{:>2}. {:<15} {}", i + 1, word, freq);
+        }
     }
 }
 
