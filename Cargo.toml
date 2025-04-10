@@ -3,6 +3,15 @@ name = "tkrar"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+repository = "https://github.com/nuexq/tkrar"
+description = "Count frequency of words in a file or a directory"
+authors = ["nuexq"]
+keywords = ["cli"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "tkrar"
+path = "src/main.rs"
 
 [dependencies]
 atty = "0.2.14"
