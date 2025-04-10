@@ -2,6 +2,8 @@ use crate::{cli::CliArgs, error::CliError};
 use atty;
 use color_print::{ceprintln, cprintln};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+use serde_json;
 use std::{
     collections::{HashMap, HashSet},
     fs::{self, File},
@@ -96,7 +98,7 @@ pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), 
 
     let word_counts = word_counts.ok_or_else(|| CliError::Other("no valid files found".into()))?;
 
-    output_results(args.top, &args.sort, word_counts);
+    output_results(args.top, &args.sort, &args.output_format, word_counts);
 
     Ok(())
 }
@@ -109,7 +111,7 @@ pub fn count_words_from_stdin(reader: StdinLock, args: &CliArgs) -> Result<(), C
     };
     let word_count = count_freq_of_words_from_reader(reader, args, &stopwords_set)?;
 
-    output_results(args.top, &args.sort, word_count);
+    output_results(args.top, &args.sort, &args.output_format, word_count);
 
     Ok(())
 }
@@ -129,9 +131,14 @@ pub fn count_freq_of_words_from_reader<R: BufRead>(
     Ok(word_count)
 }
 
-fn output_results(top: Option<usize>, sort: &str, word_count: HashMap<String, i32>) {
+fn output_results(
+    top: Option<usize>,
+    sort: &str,
+    output_format: &str,
+    word_count: HashMap<String, i32>,
+) {
     let sorted = sort_word_counts(sort, word_count);
-    print_results(top, sorted);
+    print_results(top, sorted, output_format);
 }
 
 fn process_words<R: BufRead>(
@@ -180,17 +187,52 @@ fn sort_word_counts(order: &str, word_count: HashMap<String, i32>) -> Vec<(Strin
     sorted
 }
 
-fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>) {
-    let count = top.unwrap_or(sorted.len());
+#[derive(Serialize, Deserialize, Debug)]
+struct WordFrequency {
+    word: String,
+    frequency: i32,
+}
 
-    if atty::is(atty::Stream::Stdout) {
-        for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
-            cprintln!("<w!>{:>2}. {:<15} <g>{}</>", i + 1, word, freq);
+fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>, output_format: &str) {
+    let count = top.unwrap_or(sorted.len());
+    let results: Vec<WordFrequency> = sorted
+        .into_iter()
+        .take(count)
+        .map(|(word, freq)| WordFrequency {
+            word,
+            frequency: freq,
+        })
+        .collect();
+
+    let is_tty = atty::is(atty::Stream::Stdout);
+
+    match output_format {
+        "text" => {
+            for (i, result) in results.iter().enumerate() {
+                if is_tty {
+                    cprintln!(
+                        "<w!>{:>2}. {:<15} <g>{}</>",
+                        i + 1,
+                        result.word,
+                        result.frequency
+                    );
+                } else {
+                    println!("{:>2}. {:<15} {}", i + 1, result.word, result.frequency);
+                }
+            }
         }
-    } else {
-        for (i, (word, freq)) in sorted.into_iter().take(count).enumerate() {
-            println!("{:>2}. {:<15} {}", i + 1, word, freq);
+        "json" => {
+            let json_output = serde_json::to_string(&results).unwrap();
+            println!("{}", json_output);
+        }
+        "csv" => {
+            println!("Rank,Word,Frequency");
+            for (i, result) in results.iter().enumerate() {
+                println!("{},{},{}", i + 1, result.word, result.frequency);
+            }
+        }
+        _ => {
+            eprintln!("Unsupported output format: {}", output_format);
         }
     }
 }
-

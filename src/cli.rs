@@ -48,4 +48,9 @@ pub struct CliArgs {
     /// Ignore non-alphanumeric characters
     #[arg(long)]
     pub alphabetic_only: bool,
+
+    /// Output with the specified format
+    #[arg(long = "output-format", short = 'o', value_name = "FORMAT", default_value = "text", value_parser = ["text", "json", "csv"])]
+    pub output_format: String,
+
 }
