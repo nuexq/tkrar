@@ -1,12 +1,24 @@
 use clap::Parser;
 use cli::CliArgs;
+use regex::Regex;
+use serde::Deserialize;
 use std::io::{self, IsTerminal};
+use std::{fs, path::PathBuf};
+use toml;
 
 mod cli;
 mod commands;
 mod error;
 
 use error::CliError;
+
+#[derive(Deserialize, Debug)]
+struct Config {
+    top: Option<usize>,
+    min_char: Option<usize>,
+    ignore_words: Option<String>,
+    ignore_files: Option<Vec<String>>,
+}
 
 fn main() {
     if let Err(e) = real_main() {
@@ -17,6 +29,37 @@ fn main() {
 
 fn real_main() -> Result<(), CliError> {
     let args = CliArgs::parse();
+
+    let args = match &args.config {
+        Some(config_path) => {
+            let config = read_config(config_path).unwrap_or_else(|_| Config {
+                top: None,
+                min_char: None,
+                ignore_words: None,
+                ignore_files: None,
+            });
+            let args = CliArgs {
+                top: args.top.or(config.top),
+                min_char: args.min_char.or(config.min_char),
+                sort: args.sort,
+                case_sensitive: args.case_sensitive,
+                no_stopwords: args.no_stopwords,
+                ignore_words: args.ignore_words.or_else(|| {
+                    config
+                        .ignore_words
+                        .as_ref()
+                        .map(|regex| Regex::new(regex).unwrap())
+                }),
+                ignore_files: args.ignore_files.or(config.ignore_files),
+                alphabetic_only: args.alphabetic_only,
+                output_format: args.output_format,
+                ..args
+            };
+            args
+        }
+        None => args,
+    };
+
     let stdin = io::stdin();
 
     match &args.target {
@@ -33,4 +76,12 @@ fn real_main() -> Result<(), CliError> {
     }
 
     Ok(())
+}
+
+fn read_config(config_path: &PathBuf) -> Result<Config, CliError> {
+    let config_content = fs::read_to_string(config_path)
+        .map_err(|e| CliError::Other(format!("Failed to read config file: {}", e)))?;
+    let config: Config = toml::de::from_str(&config_content)
+        .map_err(|e| CliError::Other(format!("Failed to parse config file: {}", e)))?;
+    Ok(config)
 }

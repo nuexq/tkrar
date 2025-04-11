@@ -53,4 +53,7 @@ pub struct CliArgs {
     #[arg(long = "output-format", short = 'o', value_name = "FORMAT", default_value = "text", value_parser = ["text", "json", "csv"])]
     pub output_format: String,
 
+    /// Path to the config file
+    #[arg(short = 'C', long)]
+    pub config: Option<PathBuf>,
 }
