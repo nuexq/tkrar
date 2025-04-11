@@ -1,6 +1,6 @@
 # tkrar
 
-A simple CLI tool written in Rust to count frequency of words in a file or a directory.
+A fast and feature-rich CLI tool written in Rust to count frequency of words in a file or a directory.
 
 **Name origin:**  
 The name **tkrar** (تكرار) comes from the Arabic word for *repetition* or *frequency*.  
