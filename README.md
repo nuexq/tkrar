@@ -47,11 +47,27 @@ tkrar [OPTIONS] [TARGET]...
 - `-i`, `--ignore-words <REGEX>`: ignore words that match the provided regex pattern
 - `-I`, `--ignore-files <FILE>`: ignore provided files path
 - `-o`, `--output-format <FORMAT>`: output with the specified format (default: text) (text, json, csv)
+- `-C`, `--config <FILE>`: use the specified config file
 
 
 ### Arguments
 
 - `[TARGET]...`: path to the multiple target files or directories (default: stdin)
+
+## Configuration file
+
+You can create a configuration file (default: `config.toml`) with the following format:
+```toml
+# config.toml
+top = 10
+
+min_char = 3
+
+ignore_words = "ignored|hi|hidden"
+
+ignore_files = ["src/ignored.txt", "dummy.txt"]
+```
+only those option supported for the config file, you have to specify others in the command line.
 
 ## Examples
 

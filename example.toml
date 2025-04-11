@@ -1,4 +1,4 @@
 top = 10
 min_char = 3
 ignore_words = "ignored|hi|hidden"
-ignore_files = ["src/main.rs", "src/commands.rs"]
+ignore_files = ["src/ignored.txt", "dummy.txt"]
