@@ -85,3 +85,20 @@ fn read_config(config_path: &PathBuf) -> Result<Config, CliError> {
         .map_err(|e| CliError::Other(format!("Failed to parse config file: {}", e)))?;
     Ok(config)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_read_config() {
+        let config_path = PathBuf::from("example.toml");
+        let config = read_config(&config_path).unwrap();
+        assert_eq!(config.top, Some(10));
+        assert_eq!(config.min_char, Some(3));
+        assert_eq!(config.ignore_words, Some("ignored|hi|hidden".to_string()));
+        assert_eq!(
+            config.ignore_files,
+            Some(vec!["src/ignored.txt".to_string(), "dummy.txt".to_string()])
+        );
+    }
+}
