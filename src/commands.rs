@@ -59,11 +59,7 @@ pub fn count_freq_of_words(target: &Vec<PathBuf>, args: &CliArgs) -> Result<(), 
         .into_iter()
         .filter(|file| {
             !args.ignore_files.as_ref().map_or(false, |ignore_files| {
-                ignore_files.contains(
-                    &file
-                        .to_string_lossy()
-                        .to_string(),
-                )
+                ignore_files.contains(&file.to_string_lossy().to_string())
             })
         })
         .collect::<Vec<PathBuf>>();
@@ -232,5 +228,90 @@ fn print_results(top: Option<usize>, sorted: Vec<(String, i32)>, output_format: 
         _ => {
             eprintln!("Unsupported output format: {}", output_format);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::BufReader;
+
+    fn base_args() -> CliArgs {
+        CliArgs {
+            target: None,
+            top: None,
+            min_char: None,
+            sort: "asc".into(),
+            case_sensitive: false,
+            no_stopwords: false,
+            ignore_words: None,
+            ignore_files: None,
+            alphabetic_only: false,
+            output_format: "text".into(),
+            config: None,
+        }
+    }
+
+    #[test]
+    fn test_count_freq_of_words_from_reader_basic() {
+        let input = "hello world, hello again";
+        let reader = BufReader::new(input.as_bytes());
+        let args = base_args();
+
+        let result = count_freq_of_words_from_reader(reader, &args, &None).unwrap();
+
+        let expected: HashMap<String, i32> = vec![
+            ("hello".to_string(), 2),
+            ("world".to_string(), 1),
+            ("again".to_string(), 1),
+        ]
+        .into_iter()
+        .collect();
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_stopwords_filtering() {
+        let input = "this is a test of stopwords filtering";
+        let reader = BufReader::new(input.as_bytes());
+        let mut args = base_args();
+        args.no_stopwords = true;
+
+        let result =
+            count_freq_of_words_from_reader(reader, &args, &Some(Arc::clone(&STOPWORDS))).unwrap();
+
+        assert_eq!(
+            result,
+            vec![
+                ("test".to_string(), 1),
+                ("stopwords".to_string(), 1),
+                ("filtering".to_string(), 1)
+            ]
+            .into_iter()
+            .collect(),
+            "Stopwords filtering failed"
+        );
+    }
+
+    #[test]
+    fn test_sort_word_counts() {
+        let input = "hello world, hello again";
+        let reader = BufReader::new(input.as_bytes());
+        let word_count = count_freq_of_words_from_reader(reader, &base_args(), &None).unwrap();
+
+        let sorted = sort_word_counts("asc", word_count.clone());
+        assert_eq!(
+            sorted.last(),
+            Some(&("hello".to_string(), 2 as i32)),
+            "Sorting failed for ascending order"
+        );
+
+        let sorted = sort_word_counts("desc", word_count);
+        assert_eq!(
+            sorted.first(),
+            Some(&("hello".to_string(), 2 as i32)),
+            "Sorting failed for descending order"
+        );
     }
 }
